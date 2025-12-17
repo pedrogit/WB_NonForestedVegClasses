@@ -63,7 +63,6 @@ Init <- function(sim){
     # Reclass any disturbed values assigned by prepInputs_NTEMS_LCC_FAO() (240) to shrub (50)
     sim$WB_NonForestedVegClassesBaseLCCMap[sim$WB_NonForestedVegClassesBaseLCCMap == 240] <- 50
   }
-  browser()
   # Project and crop the base LCC map to pixelGroupMap
   # This is done only once wherever the LCC was instanciated from (default, rstLCC or simInit)
   if (!.compareRas(sim$WB_NonForestedVegClassesBaseLCCMap, sim$pixelGroupMap, stopOnError = FALSE))
@@ -77,21 +76,10 @@ Init <- function(sim){
 
 reComputeNonForestedAreaMap <- function(sim) {
   message("Recomputing sim$WB_NonForestedVegClassesMap...")
-  browser()
-  
-  sim$WB_NonForestedVegClassesMap <- sim$WB_NonForestedVegClassesBaseLCCMap
-  # Remove forested areas from the WB_NonForestedVegClasses map
-  # For now those area do not change, but eventually we will consider areas where
-  # biomass is negligible for a long time as non-forested by keeping a history 
-  # of total biomass by pixelGroup.
-  sim$WB_NonForestedVegClassesMap <- mask(
-    sim$WB_NonForestedVegClassesMap, 
-    sim$pixelGroupMap, 
-    inverse = TRUE
+  sim$WB_NonForestedVegClassesMap <- computeNonForestedAreaMap(
+    sim$WB_NonForestedVegClassesBaseLCCMap,
+    sim$pixelGroupMap
   )
-  # Reassign it names (for nicer plotting) 
-  names(sim$WB_NonForestedVegClassesMap) <- "nonForestedVegClasses"
-  varnames(sim$WB_NonForestedVegClassesMap) <- "nonForestedVegClasses"
 
   return(invisible(sim))
 }
