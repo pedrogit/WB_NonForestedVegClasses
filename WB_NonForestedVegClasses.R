@@ -43,20 +43,7 @@ doEvent.WB_NonForestedVegClasses = function(sim, eventTime, eventType) {
     eventType,
     
     init = {
-      # If WB_NonForestedVegClassesBaseLCCMap is not provided in the objects, make it a copy of sim$rstLCC
-      if (!suppliedElsewhere("WB_NonForestedVegClassesBaseLCCMap", sim) && !is.null(sim$rstLCC)){
-        sim$WB_NonForestedVegClassesBaseLCCMap <- sim$rstLCC
-        # Reclass any disturbed values assigned by prepInputs_NTEMS_LCC_FAO() (240) to shrub (50)
-        sim$WB_NonForestedVegClassesBaseLCCMap[sim$WB_NonForestedVegClassesBaseLCCMap == 240] <- 50
-      }
-      # Project and crop the base LCC map to pixelGroupMap
-      # This is done only once wherever the LCC was instanciated from (default, rstLCC or simInit)
-      if (!.compareRas(sim$WB_NonForestedVegClassesBaseLCCMap, sim$pixelGroupMap))
-        sim$WB_NonForestedVegClassesBaseLCCMap <- postProcess(
-          sim$WB_NonForestedVegClassesBaseLCCMap,
-          projectTo = sim$pixelGroupMap,
-          cropTo = sim$pixelGroupMap
-        )
+      sim <- Init(sim)
       sim <- scheduleEvent(sim, time(sim), "WB_NonForestedVegClasses", "reComputeNonForestedAreaMap", 2)
     },
     
@@ -69,6 +56,24 @@ doEvent.WB_NonForestedVegClasses = function(sim, eventTime, eventType) {
   return(invisible(sim))
 }
 
+Init <- function(sim){
+  # If WB_NonForestedVegClassesBaseLCCMap is not provided in the objects, make it a copy of sim$rstLCC
+  if (!suppliedElsewhere("WB_NonForestedVegClassesBaseLCCMap", sim) && !is.null(sim$rstLCC)){
+    sim$WB_NonForestedVegClassesBaseLCCMap <- sim$rstLCC
+    # Reclass any disturbed values assigned by prepInputs_NTEMS_LCC_FAO() (240) to shrub (50)
+    sim$WB_NonForestedVegClassesBaseLCCMap[sim$WB_NonForestedVegClassesBaseLCCMap == 240] <- 50
+  }
+  browser()
+  # Project and crop the base LCC map to pixelGroupMap
+  # This is done only once wherever the LCC was instanciated from (default, rstLCC or simInit)
+  if (!.compareRas(sim$WB_NonForestedVegClassesBaseLCCMap, sim$pixelGroupMap, stopOnError = FALSE))
+    sim$WB_NonForestedVegClassesBaseLCCMap <- postProcess(
+      sim$WB_NonForestedVegClassesBaseLCCMap,
+      projectTo = sim$pixelGroupMap,
+      cropTo = sim$pixelGroupMap
+    )
+  return(invisible(sim))
+}
 
 reComputeNonForestedAreaMap <- function(sim) {
   message("Recomputing sim$WB_NonForestedVegClassesMap...")
@@ -99,11 +104,11 @@ reComputeNonForestedAreaMap <- function(sim) {
   if(!suppliedElsewhere("pixelGroupMap", sim)){
     nbGroup <- 200
     pixelGroupRastWidth <- 1000
-    message("##############################################################################")   
-    message("pixelGrouMap not supplied.")   
-    message("Please provide one. Creating random map ", pixelGroupRastWidth, " pixels by ", 
+    message("##############################################################################")
+    message("pixelGrouMap not supplied.")
+    message("Please provide one. Creating random map ", pixelGroupRastWidth, " pixels by ",
             pixelGroupRastWidth, " pixels with ", nbGroup, " groups...")
-    
+
     sim$pixelGroupMap <- Cache(
       getRandomCategoricalMap,
       origin = c(-667296, 1758502),
@@ -112,11 +117,11 @@ reComputeNonForestedAreaMap <- function(sim) {
       crs = "ESRI:102002",
       nbregion = nbGroup,
       seed = 100,
-      userTags = c(userTags, "pixelGroupMap"), 
+      userTags = c(userTags, "WB_pixelGroupMap"),
       omitArgs = c("userTags")
     )
   }
-  
+
   
   if (!is.null(sim$pixelGroupMap)){
     baseRast <- sim$pixelGroupMap
