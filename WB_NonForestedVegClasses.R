@@ -26,6 +26,9 @@ defineModule(sim, list(
                               "boimass_core module used to determine ",
                               "forested areas"),
                  sourceURL = NA),
+    expectsInput(objectName = "rasterToMatch", 
+                 objectClass = "SpatRaster",
+                 desc = "A raster version of the `studyArea`"),
     expectsInput(objectName = "WB_NonForestedVegClassesBaseLCCMap", 
                  objectClass = "SpatRast", 
                  desc = "", 
@@ -63,19 +66,22 @@ Init <- function(sim){
     # Reclass any disturbed values assigned by prepInputs_NTEMS_LCC_FAO() (240) to shrub (50)
     sim$WB_NonForestedVegClassesBaseLCCMap[sim$WB_NonForestedVegClassesBaseLCCMap == 240] <- 50
   }
-  # Project and crop the base LCC map to pixelGroupMap
+  # Project, crop and mask the base LCC map to rasterToMatch
   # This is done only once wherever the LCC was instanciated from (default, rstLCC or simInit)
-  if (!.compareRas(sim$WB_NonForestedVegClassesBaseLCCMap, sim$pixelGroupMap, stopOnError = FALSE))
+  if (!.compareRas(sim$WB_NonForestedVegClassesBaseLCCMap, sim$rasterToMatch, stopOnError = FALSE))
     sim$WB_NonForestedVegClassesBaseLCCMap <- postProcess(
       sim$WB_NonForestedVegClassesBaseLCCMap,
-      projectTo = sim$pixelGroupMap,
-      cropTo = sim$pixelGroupMap
+      projectTo = sim$rasterToMatch,
+      cropTo = sim$rasterToMatch,
+      maskTo = sim$rasterToMatch
     )
   return(invisible(sim))
 }
 
 reComputeNonForestedAreaMap <- function(sim) {
   message("Recomputing sim$WB_NonForestedVegClassesMap...")
+
+  # Simply remove forested areas from the base LCC map
   sim$WB_NonForestedVegClassesMap <- computeNonForestedAreaMap(
     sim$WB_NonForestedVegClassesBaseLCCMap,
     sim$pixelGroupMap
@@ -110,6 +116,13 @@ reComputeNonForestedAreaMap <- function(sim) {
     )
   }
 
+  ##############################################################################
+  # rasterToMatch must be provided by some module (normally Biomass_core)
+  ##############################################################################
+  if (!suppliedElsewhere("rasterToMatch", sim)) {
+    needRTM <- TRUE
+    message("There is no rasterToMatch supplied; will attempt to use rawBiomassMap")
+  }
   
   if (!is.null(sim$pixelGroupMap)){
     baseRast <- sim$pixelGroupMap
