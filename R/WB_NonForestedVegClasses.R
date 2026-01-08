@@ -4,7 +4,7 @@ computeNonForestedAreaMap <- function(baseLCCMap, pgm){
   # For now those area do not change, but eventually we will consider areas where
   # biomass is negligible for a long time as non-forested by keeping a history 
   # of total biomass by pixelGroup.
-  nonForestedVegClassesMap <- mask(
+  nonForestedVegClassesMap <- terra::mask(
     nonForestedVegClassesMap, 
     pgm, 
     inverse = TRUE
